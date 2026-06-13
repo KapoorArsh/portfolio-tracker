@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<!--
+  portfolios/detail.html
+  Rendered by DashboardController.portfolioDetail() → model contains:
+    portfolio  PortfolioDetailDto   — id, name, createdAt, holdings (List<HoldingDto>)
+    summary    PortfolioSummaryDto  — currentValue, costBasis, unrealizedGain,
+                                      unrealizedGainPct, allocation (Map<String, BigDecimal>)
+    pageTitle  String               — portfolio name
+
+  The allocation doughnut chart is rendered by /js/allocation-chart.js via fetch()
+  against GET /api/portfolios/{id}/summary — the summary model object is NOT used
+  for the chart to keep the render cycle decoupled from the API call.
+-->
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/layout :: head(${pageTitle})}"></head>
+
+<body>
+
+<header th:replace="~{fragments/layout :: header}"></header>
+
+<main class="container">
+
+    <!-- Flash success — shown after a transaction is recorded (PRG redirect) -->
+    <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+
+    <!-- ── Page header ──────────────────────────────────────────────────────── -->
+    <div class="page-header">
+        <a th:href="@{/portfolios}" class="back-link">← All Portfolios</a>
+        <h1 th:text="${portfolio.name}">Portfolio Name</h1>
+        <p class="page-subtitle"
+           th:text="'Created ' + ${#temporals.format(portfolio.createdAt, 'MMMM d, yyyy')}">
+            Created January 1, 2024
+        </p>
+    </div>
+
+    <!-- ── Summary cards ────────────────────────────────────────────────────── -->
+    <!--
+      Three stat cards: Current Value, Cost Basis, Unrealized Gain/Loss.
+      The gain/loss card gets a "gain" or "loss" CSS class appended based on the
+      sign of unrealizedGain.  BigDecimal.signum() returns -1, 0, or 1, making
+      the comparison unambiguous (avoids OGNL coercion issues with >= 0 on BigDecimal).
+      #numbers.formatDecimal(value, minInt, thousandsSep, decimalDigits, decimalSep)
+      formats money in US style: 1,900.00
+    -->
+    <div class="cards-grid">
+        <div class="card">
+            <div class="card-label">Current Value</div>
+            <div class="card-value"
+                 th:text="'$' + ${#numbers.formatDecimal(summary.currentValue, 0, 'COMMA', 2, 'POINT')}">
+                $0.00
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-label">Cost Basis</div>
+            <div class="card-value"
+                 th:text="'$' + ${#numbers.formatDecimal(summary.costBasis, 0, 'COMMA', 2, 'POINT')}">
+                $0.00
+            </div>
+        </div>
+        <!--
+          th:classappend appends to the existing class list.
+          "card" stays; "gain" or "loss" is appended → "card gain" / "card loss".
+          The CSS then colours .card.gain .card-value green and .card.loss red.
+        -->
+        <div class="card"
+             th:classappend="${summary.unrealizedGain.signum() >= 0 ? 'gain' : 'loss'}">
+            <div class="card-label">Unrealized Gain / Loss</div>
+            <div class="card-value"
+                 th:text="(${summary.unrealizedGain.signum() >= 0} ? '+' : '') +
+                          '$' + ${#numbers.formatDecimal(summary.unrealizedGain, 0, 'COMMA', 2, 'POINT')}">
+                $0.00
+            </div>
+            <div class="card-sub"
+                 th:text="${#numbers.formatDecimal(summary.unrealizedGainPct, 0, 'COMMA', 2, 'POINT')} + '%'">
+                0.00%
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Holdings table ───────────────────────────────────────────────────── -->
+    <div class="section-header">
+        <h2 class="section-title" style="margin-bottom:0;">Holdings</h2>
+        <!--
+          Links to GET /portfolios/{id}/transactions/new — the transaction form.
+          Styled as a secondary button so it doesn't compete visually with the
+          summary cards but is clearly actionable.
+        -->
+        <a th:href="@{/portfolios/{id}/transactions/new(id=${portfolio.id})}"
+           class="btn btn-secondary">
+            + Record Transaction
+        </a>
+    </div>
+
+    <!-- Non-empty state -->
+    <div th:if="${not #lists.isEmpty(portfolio.holdings)}" class="table-wrap">
+        <table>
+            <thead>
+            <tr>
+                <th>Ticker</th>
+                <th>Name</th>
+                <th>Qty</th>
+                <th>Avg Cost</th>
+                <th>Price</th>
+                <th>Market Value</th>
+                <th>Gain / Loss</th>
+            </tr>
+            </thead>
+            <tbody>
+            <!--
+              th:each iterates the HoldingDto list.
+              Columns 1–2 are left-aligned (th:first-child rule in CSS).
+              Columns 3–7 are right-aligned by default (td rule in CSS).
+              The gain/loss cell gets th:class (replaces the default class entirely)
+              rather than th:classappend so "gain"/"loss" is the only class applied.
+            -->
+            <tr th:each="h : ${portfolio.holdings}">
+                <td th:text="${h.ticker}">AAPL</td>
+                <td th:text="${h.stockName}">Apple Inc.</td>
+                <td th:text="${h.quantity}">10</td>
+                <td th:text="'$' + ${#numbers.formatDecimal(h.avgBuyPrice, 0, 'COMMA', 2, 'POINT')}">$0.00</td>
+                <td th:text="'$' + ${#numbers.formatDecimal(h.currentPrice, 0, 'COMMA', 2, 'POINT')}">$0.00</td>
+                <td th:text="'$' + ${#numbers.formatDecimal(h.currentValue, 0, 'COMMA', 2, 'POINT')}">$0.00</td>
+                <td th:class="${h.unrealizedGain.signum() >= 0 ? 'gain' : 'loss'}"
+                    th:text="(${h.unrealizedGain.signum() >= 0} ? '+' : '') +
+                             '$' + ${#numbers.formatDecimal(h.unrealizedGain, 0, 'COMMA', 2, 'POINT')}">
+                    $0.00
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Empty holdings state -->
+    <p th:unless="${not #lists.isEmpty(portfolio.holdings)}"
+       style="color:var(--text-muted); margin-bottom:2rem;">
+        No holdings in this portfolio yet.
+    </p>
+
+    <!-- ── Allocation doughnut chart ────────────────────────────────────────── -->
+    <h2 class="section-title">Allocation</h2>
+    <div class="chart-section">
+        <div class="chart-container">
+            <!--
+              data-portfolio-id is a custom HTML5 data attribute.
+              allocation-chart.js reads canvas.dataset.portfolioId to know which
+              /api/portfolios/{id}/summary endpoint to call.
+              This avoids hardcoding the id in the JS file and makes the script
+              work for any portfolio detail page without modification.
+            -->
+            <canvas id="allocation-chart"
+                    th:attr="data-portfolio-id=${portfolio.id}"></canvas>
+            <p id="chart-status" class="chart-status">Loading chart…</p>
+        </div>
+    </div>
+
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+
+<!-- Chart.js from CDN — loaded before allocation-chart.js so Chart is available -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<!--
+  @{/js/allocation-chart.js} generates a context-relative URL.
+  Placing scripts at the bottom of <body> ensures the DOM (especially the <canvas>)
+  is fully parsed before the script runs, avoiding null getElementById calls.
+-->
+<script th:src="@{/js/allocation-chart.js}"></script>
+
+</body>
+</html>
+

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<!--
+  portfolios/new.html
+  Rendered by DashboardController.newPortfolioForm() and re-rendered by
+  DashboardController.createPortfolio() when validation fails.
+
+  Model attributes:
+    portfolioForm  CreatePortfolioForm  — form-backing object; contains BindingResult
+                                          errors when re-rendered after a failed POST
+    pageTitle      String               — "New Portfolio"
+
+  Form action: POST /portfolios → DashboardController.createPortfolio()
+  On success:  redirect to /portfolios (PRG)
+  On failure:  this page is re-rendered with inline field errors
+-->
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/layout :: head('New Portfolio')}"></head>
+
+<body>
+
+<header th:replace="~{fragments/layout :: header}"></header>
+
+<main class="container">
+
+    <div class="page-header">
+        <a th:href="@{/portfolios}" class="back-link">← All Portfolios</a>
+        <h1>New Portfolio</h1>
+        <p class="page-subtitle">Give your portfolio a name to get started.</p>
+    </div>
+
+    <div class="form-card">
+        <!--
+          th:action  — generates POST /portfolios (context-relative URL).
+          th:object  — binds this form to the "portfolioForm" model attribute so that:
+                         th:field="*{name}"   expands to id="name" name="name" value="..."
+                         #fields.hasErrors()  inspects the BindingResult for that attribute
+                         th:errors="*{name}"  renders the first error message for the field
+          method="POST" — standard HTML form method; browser sends application/x-www-form-urlencoded
+        -->
+        <form th:action="@{/portfolios}" th:object="${portfolioForm}" method="POST">
+
+            <div class="form-group">
+                <label class="form-label" for="name">Portfolio Name</label>
+                <!--
+                  th:classappend conditionally appends "is-invalid" to the static class
+                  list without replacing it.  The CSS .is-invalid rule colours the border red.
+                  #fields.hasErrors('name') returns true when BindingResult has errors for "name".
+                -->
+                <input type="text"
+                       id="name"
+                       th:field="*{name}"
+                       class="form-control"
+                       th:classappend="${#fields.hasErrors('name')} ? ' is-invalid'"
+                       placeholder="e.g. My Tech Portfolio"
+                       maxlength="100"
+                       autofocus>
+                <!--
+                  th:errors="*{name}" renders the first constraint violation message
+                  for the "name" field (e.g. "Portfolio name must not be blank").
+                  th:if guards the paragraph so it is absent when there are no errors,
+                  keeping the DOM clean and the CSS layout stable.
+                -->
+                <p th:if="${#fields.hasErrors('name')}"
+                   th:errors="*{name}"
+                   class="form-error">Name error placeholder</p>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Create Portfolio</button>
+                <a th:href="@{/portfolios}" class="btn btn-secondary">Cancel</a>
+            </div>
+
+        </form>
+    </div>
+
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+
+</body>
+</html>
+

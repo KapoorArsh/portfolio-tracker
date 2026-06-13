@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<!--
+  fragments/layout.html
+  Reusable Thymeleaf fragments — included by every page via th:replace.
+  Centralising head + nav here means a single change updates every page.
+-->
+<html xmlns:th="http://www.thymeleaf.org">
+
+<!--
+  head(title) fragment
+  th:replace="~{fragments/layout :: head('Page Title')}"
+  Injects the full <head> block including the CSS link.
+  @{/css/app.css} produces a context-relative path so the link is correct
+  regardless of whether the app is deployed at / or a sub-path.
+-->
+<head th:fragment="head(title)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title} + ' — Portfolio Tracker'">Portfolio Tracker</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+
+<body>
+
+<!--
+  header fragment
+  th:replace="~{fragments/layout :: header}"
+  Renders the top navigation bar. Shared across all pages.
+-->
+<header th:fragment="header">
+    <nav class="navbar">
+        <a th:href="@{/}" class="nav-brand">📈 Portfolio Tracker</a>
+        <div class="nav-links">
+            <a th:href="@{/portfolios}">Portfolios</a>
+        </div>
+    </nav>
+</header>
+
+<!--
+  footer fragment
+  th:replace="~{fragments/layout :: footer}"
+-->
+<footer th:fragment="footer">
+    <p>Portfolio Tracker — Spring Boot 4 &amp; Thymeleaf</p>
+</footer>
+
+</body>
+</html>
+

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<!--
+  portfolios/transaction.html
+  Rendered by DashboardController.newTransactionForm() and re-rendered by
+  DashboardController.recordTransaction() when validation fails or a business
+  rule is violated (InsufficientSharesException).
+
+  Model attributes:
+    portfolio        PortfolioDetailDto  — id and name (used in back-link and form action)
+    stocks           List<Stock>         — all stocks; drives the <select> dropdown
+    transactionForm  TransactionForm     — form-backing object; fields are pre-filled
+                                          on re-render so the user doesn't retype values
+    error            String (optional)   — inline error from InsufficientSharesException
+                                          e.g. "Cannot sell 50 share(s) of AAPL — only 10 held."
+    pageTitle        String              — "Record Transaction"
+
+  Form action: POST /portfolios/{id}/transactions → DashboardController.recordTransaction()
+  On success:  redirect to /portfolios/{id} (PRG) — holdings, valuation, chart all recalculate
+  On failure:  this page is re-rendered with field errors and/or an inline error message
+-->
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/layout :: head('Record Transaction')}"></head>
+
+<body>
+
+<header th:replace="~{fragments/layout :: header}"></header>
+
+<main class="container">
+
+    <!-- ── Page header ──────────────────────────────────────────────────────── -->
+    <div class="page-header">
+        <!--
+          @{} with a path-variable substitution: (id=${portfolio.id}) fills {id}.
+          PortfolioDetailDto is a record; .id() is accessed as ${portfolio.id}.
+        -->
+        <a th:href="@{/portfolios/{id}(id=${portfolio.id})}" class="back-link">← Back to Portfolio</a>
+        <h1>Record Transaction</h1>
+        <p class="page-subtitle" th:text="'Portfolio: ' + ${portfolio.name}">Portfolio: Name</p>
+    </div>
+
+    <!--
+      Inline error — shown for business-rule violations such as InsufficientSharesException.
+      This is distinct from field-level errors (shown below each field via th:errors).
+      Example: "Cannot sell 50 share(s) of AAPL — only 10 held."
+    -->
+    <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+
+    <div class="form-card">
+        <!--
+          th:action with path-variable syntax generates /portfolios/1/transactions
+          (the actual id is substituted by Thymeleaf at render time).
+        -->
+        <form th:action="@{/portfolios/{id}/transactions(id=${portfolio.id})}"
+              th:object="${transactionForm}"
+              method="POST">
+
+            <!-- ── Stock dropdown ──────────────────────────────────────────── -->
+            <div class="form-group">
+                <label class="form-label" for="stockId">Stock</label>
+                <!--
+                  th:field="*{stockId}" on a <select> renders the name/id attributes
+                  and marks the matching <option> as selected by comparing its th:value
+                  to transactionForm.stockId.  On the initial (empty) form, stockId is null
+                  so no option is pre-selected — the placeholder option shows.
+                -->
+                <select id="stockId"
+                        th:field="*{stockId}"
+                        class="form-control"
+                        th:classappend="${#fields.hasErrors('stockId')} ? ' is-invalid'">
+                    <option value="">— Select a stock —</option>
+                    <!--
+                      th:value is the database ID (Long) — this is what gets submitted
+                      and bound to TransactionForm.stockId.
+                      th:text is the human-readable label rendered inside the option.
+                      th:selected is NOT needed here: th:field handles selected state.
+                    -->
+                    <option th:each="s : ${stocks}"
+                            th:value="${s.id}"
+                            th:text="${s.ticker} + ' — ' + ${s.name}">
+                        AAPL — Apple Inc.
+                    </option>
+                </select>
+                <p th:if="${#fields.hasErrors('stockId')}"
+                   th:errors="*{stockId}"
+                   class="form-error">Stock error placeholder</p>
+            </div>
+
+            <!-- ── Transaction type ────────────────────────────────────────── -->
+            <div class="form-group">
+                <label class="form-label">Type</label>
+                <!--
+                  Radio inputs use th:field="*{type}" which sets name="type" on both
+                  inputs (required for radio groups) and pre-checks the matching one
+                  when the form is re-rendered with a previously selected value.
+                  The value attributes are the enum constant names ("BUY", "SELL");
+                  Spring MVC's ConversionService converts the submitted string to
+                  TransactionType.BUY / TransactionType.SELL automatically.
+                -->
+                <div class="radio-group">
+                    <label class="radio-label">
+                        <input type="radio" th:field="*{type}" value="BUY">
+                        <span class="radio-text buy-text">BUY</span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" th:field="*{type}" value="SELL">
+                        <span class="radio-text sell-text">SELL</span>
+                    </label>
+                </div>
+                <p th:if="${#fields.hasErrors('type')}"
+                   th:errors="*{type}"
+                   class="form-error">Type error placeholder</p>
+            </div>
+
+            <!-- ── Quantity ────────────────────────────────────────────────── -->
+            <div class="form-group">
+                <label class="form-label" for="quantity">Quantity (shares)</label>
+                <input type="number"
+                       id="quantity"
+                       th:field="*{quantity}"
+                       class="form-control"
+                       th:classappend="${#fields.hasErrors('quantity')} ? ' is-invalid'"
+                       min="1"
+                       step="1"
+                       placeholder="e.g. 10">
+                <p th:if="${#fields.hasErrors('quantity')}"
+                   th:errors="*{quantity}"
+                   class="form-error">Quantity error placeholder</p>
+            </div>
+
+            <!-- ── Price ───────────────────────────────────────────────────── -->
+            <div class="form-group">
+                <label class="form-label" for="price">Price per Share ($)</label>
+                <!--
+                  step="0.01" allows two decimal places on the native number picker,
+                  but the server-side @DecimalMin constraint is the real guard.
+                -->
+                <input type="number"
+                       id="price"
+                       th:field="*{price}"
+                       class="form-control"
+                       th:classappend="${#fields.hasErrors('price')} ? ' is-invalid'"
+                       min="0.0001"
+                       step="0.01"
+                       placeholder="e.g. 185.50">
+                <p th:if="${#fields.hasErrors('price')}"
+                   th:errors="*{price}"
+                   class="form-error">Price error placeholder</p>
+            </div>
+
+            <!-- ── Actions ─────────────────────────────────────────────────── -->
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Record Transaction</button>
+                <a th:href="@{/portfolios/{id}(id=${portfolio.id})}" class="btn btn-secondary">Cancel</a>
+            </div>
+
+        </form>
+    </div>
+
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+
+</body>
+</html>
+

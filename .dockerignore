@@ -1,0 +1,25 @@
+# .dockerignore — files excluded from the Docker build context
+# Keeping the context small speeds up `docker build` and prevents
+# accidental inclusion of credentials or large local-only directories.
+
+# Maven build output (the builder stage regenerates this inside the container)
+target/
+
+# IDE project files
+.idea/
+*.iml
+.vscode/
+*.class
+
+# Git metadata
+.git/
+.gitignore
+
+# OS noise
+.DS_Store
+Thumbs.db
+
+# Local environment / secrets — never send these to Docker
+.env
+*.env
+

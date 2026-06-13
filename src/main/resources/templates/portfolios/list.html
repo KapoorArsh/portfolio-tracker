@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<!--
+  portfolios/list.html
+  Rendered by DashboardController.portfolioList() → model contains:
+    portfolios  List<PortfolioListItemDto>  — id, name, createdAt
+    pageTitle   String                      — "Portfolios"
+    error       String (flash, optional)    — set when redirect comes from a bad id
+-->
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/layout :: head('Portfolios')}"></head>
+
+<body>
+
+<header th:replace="~{fragments/layout :: header}"></header>
+
+<main class="container">
+
+    <!-- Flash error — shown when the user visits an unknown portfolio id -->
+    <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+    <!-- Flash success — shown after a new portfolio is created (PRG redirect) -->
+    <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+
+    <div class="page-header">
+        <div class="page-header-row">
+            <div>
+                <h1>Portfolios</h1>
+                <p class="page-subtitle">Select a portfolio to view its holdings and performance.</p>
+            </div>
+            <!--
+              th:href="@{/portfolios/new}" generates the context-relative URL to the
+              create-portfolio form (GET /portfolios/new).
+              The link is styled as a button using .btn.btn-primary so it matches the
+              form submit buttons and looks like a primary action.
+            -->
+            <a th:href="@{/portfolios/new}" class="btn btn-primary">+ New Portfolio</a>
+        </div>
+    </div>
+
+    <!-- Populated portfolio grid -->
+    <div th:if="${not #lists.isEmpty(portfolios)}" class="portfolio-grid">
+        <!--
+          th:each iterates over the List<PortfolioListItemDto>.
+          Records expose their components through accessor methods, which Thymeleaf
+          treats as JavaBean properties: portfolio.name() is accessed as ${p.name}.
+          th:href uses @{} URL syntax with a template variable — the parentheses
+          syntax (id=${p.id}) fills in path variables.
+        -->
+        <a th:each="p : ${portfolios}"
+           th:href="@{/portfolios/{id}(id=${p.id})}"
+           class="portfolio-card">
+            <h2 th:text="${p.name}">Portfolio Name</h2>
+            <!--
+              #temporals.format() is from thymeleaf-extras-java8time, auto-configured
+              by spring-boot-starter-thymeleaf.  It formats LocalDateTime using the
+              same java.time.format.DateTimeFormatter patterns.
+            -->
+            <p class="date"
+               th:text="'Created ' + ${#temporals.format(p.createdAt, 'MMM d, yyyy')}">
+                Created Jan 1, 2024
+            </p>
+        </a>
+    </div>
+
+    <!-- Empty state — only shown when there are no portfolios -->
+    <div th:unless="${not #lists.isEmpty(portfolios)}" class="empty-state">
+        <h2>No portfolios yet</h2>
+        <p>Create your first portfolio to start tracking your holdings.</p>
+        <a th:href="@{/portfolios/new}" class="btn btn-primary" style="margin-top:1.25rem; display:inline-block;">
+            + New Portfolio
+        </a>
+    </div>
+
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+
+</body>
+</html>
+

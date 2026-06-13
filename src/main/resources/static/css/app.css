@@ -1,0 +1,409 @@
+/*
+ * app.css — Portfolio Tracker UI
+ *
+ * Design tokens live in :root so every colour/shadow can be tweaked in one place.
+ * No build step, no framework — plain CSS that any browser released in the last
+ * five years can render without polyfills.
+ */
+
+/* ── Reset ─────────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Design tokens ──────────────────────────────────────────────────────────── */
+:root {
+    --primary:       #4F46E5;   /* indigo-600  — navbar, links, accents      */
+    --primary-dark:  #3730a3;   /* indigo-800  — hover state                 */
+    --surface:       #ffffff;   /* card / table background                   */
+    --bg:            #f8fafc;   /* page background                           */
+    --border:        #e2e8f0;   /* all borders                               */
+    --text:          #1e293b;   /* primary text                              */
+    --text-muted:    #64748b;   /* secondary text, labels                    */
+    --gain:          #16a34a;   /* green  — positive P&L                     */
+    --loss:          #dc2626;   /* red    — negative P&L                     */
+    --radius:        8px;
+    --shadow:        0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
+    --shadow-hover:  0 4px 12px rgba(0,0,0,.12);
+}
+
+/* ── Base ───────────────────────────────────────────────────────────────────── */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+a { color: var(--primary); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ── Navbar ─────────────────────────────────────────────────────────────────── */
+.navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2rem;
+    height: 60px;
+    background: var(--primary);
+    box-shadow: 0 2px 4px rgba(0,0,0,.15);
+    flex-shrink: 0;
+}
+.nav-brand {
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: -.01em;
+    text-decoration: none;
+}
+.nav-brand:hover { text-decoration: none; color: rgba(255,255,255,.9); }
+.nav-links a {
+    color: rgba(255,255,255,.85);
+    font-size: .9rem;
+    font-weight: 500;
+    text-decoration: none;
+    padding: .25rem .5rem;
+    border-radius: 4px;
+    transition: background .15s;
+}
+.nav-links a:hover { background: rgba(255,255,255,.15); text-decoration: none; color: #fff; }
+
+/* ── Container ──────────────────────────────────────────────────────────────── */
+.container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+    flex: 1;
+}
+
+/* ── Page header ────────────────────────────────────────────────────────────── */
+.page-header { margin-bottom: 2rem; }
+.page-header h1 { font-size: 1.75rem; font-weight: 700; margin-top: .25rem; }
+.page-subtitle { color: var(--text-muted); font-size: .9rem; margin-top: .35rem; }
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    color: var(--primary);
+    font-size: .875rem;
+    font-weight: 500;
+    margin-bottom: .5rem;
+}
+.back-link:hover { text-decoration: underline; }
+
+/* ── Flash alert ────────────────────────────────────────────────────────────── */
+.alert {
+    padding: .875rem 1.25rem;
+    border-radius: var(--radius);
+    margin-bottom: 1.5rem;
+    font-size: .9rem;
+    font-weight: 500;
+}
+.alert-error   { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+.alert-success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; }
+
+/* ── Buttons ────────────────────────────────────────────────────────────────── */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .55rem 1.1rem;
+    border: none;
+    border-radius: var(--radius);
+    font-size: .875rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background .15s, box-shadow .15s;
+    line-height: 1;
+    white-space: nowrap;
+}
+.btn-primary {
+    background: var(--primary);
+    color: #fff;
+}
+.btn-primary:hover {
+    background: var(--primary-dark);
+    text-decoration: none;
+    color: #fff;
+}
+.btn-secondary {
+    background: var(--surface);
+    color: var(--primary);
+    border: 1px solid var(--border);
+}
+.btn-secondary:hover {
+    background: #f1f5f9;
+    text-decoration: none;
+    color: var(--primary-dark);
+}
+
+/* ── Page header with inline action button ──────────────────────────────────── */
+.page-header-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+/* ── Section header (title + inline button) ─────────────────────────────────── */
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+/* ── Form card ──────────────────────────────────────────────────────────────── */
+.form-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2rem;
+    box-shadow: var(--shadow);
+    max-width: 560px;          /* readable line-length for a single-column form  */
+}
+
+/* ── Form fields ────────────────────────────────────────────────────────────── */
+.form-group {
+    margin-bottom: 1.25rem;
+}
+.form-label {
+    display: block;
+    font-size: .8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--text-muted);
+    margin-bottom: .4rem;
+}
+.form-control {
+    display: block;
+    width: 100%;
+    padding: .55rem .85rem;
+    font-size: .9rem;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    transition: border-color .15s, box-shadow .15s;
+    appearance: auto;          /* keep native <select> arrow on all browsers      */
+}
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(79,70,229,.15);
+}
+.form-control.is-invalid {
+    border-color: var(--loss);
+}
+.form-control.is-invalid:focus {
+    box-shadow: 0 0 0 3px rgba(220,38,38,.15);
+}
+.form-error {
+    margin-top: .35rem;
+    font-size: .8rem;
+    color: var(--loss);
+    font-weight: 500;
+}
+
+/* ── Radio group (BUY / SELL) ───────────────────────────────────────────────── */
+.radio-group {
+    display: flex;
+    gap: 1.5rem;
+    padding: .35rem 0;
+}
+.radio-label {
+    display: flex;
+    align-items: center;
+    gap: .45rem;
+    cursor: pointer;
+    font-size: .9rem;
+    font-weight: 600;
+}
+.radio-label input[type="radio"] {
+    width: 1rem;
+    height: 1rem;
+    accent-color: var(--primary);
+    cursor: pointer;
+}
+.buy-text  { color: var(--gain); }
+.sell-text { color: var(--loss); }
+
+/* ── Form action row (submit + cancel) ──────────────────────────────────────── */
+.form-actions {
+    display: flex;
+    gap: .75rem;
+    margin-top: 1.75rem;
+    flex-wrap: wrap;
+}
+
+/* ── Summary cards ──────────────────────────────────────────────────────────── */
+.cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2.5rem;
+}
+.card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.5rem;
+    box-shadow: var(--shadow);
+}
+.card-label {
+    font-size: .7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: var(--text-muted);
+    margin-bottom: .5rem;
+}
+.card-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.1;
+}
+.card-sub {
+    font-size: .875rem;
+    color: var(--text-muted);
+    margin-top: .3rem;
+}
+/* Colour-code the gain/loss card */
+.card.gain .card-value { color: var(--gain); }
+.card.gain .card-sub   { color: var(--gain); }
+.card.loss .card-value { color: var(--loss); }
+.card.loss .card-sub   { color: var(--loss); }
+
+/* ── Portfolio list cards ───────────────────────────────────────────────────── */
+.portfolio-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.25rem;
+}
+.portfolio-card {
+    display: block;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+    color: inherit;
+    text-decoration: none;
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+.portfolio-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+    text-decoration: none;
+}
+.portfolio-card h2 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--primary);
+    margin-bottom: .4rem;
+}
+.portfolio-card .date {
+    font-size: .825rem;
+    color: var(--text-muted);
+}
+
+/* ── Section headings ───────────────────────────────────────────────────────── */
+.section-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: var(--text);
+}
+
+/* ── Holdings table ─────────────────────────────────────────────────────────── */
+.table-wrap {
+    overflow-x: auto;
+    margin-bottom: 2.5rem;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--surface);
+    border: 1px solid var(--border);
+}
+thead { background: #f1f5f9; }
+th {
+    padding: .75rem 1rem;
+    text-align: right;
+    font-size: .7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--text-muted);
+    white-space: nowrap;
+    border-bottom: 1px solid var(--border);
+}
+th:first-child, th:nth-child(2) { text-align: left; }
+td {
+    padding: .875rem 1rem;
+    font-size: .9rem;
+    border-top: 1px solid var(--border);
+    text-align: right;
+    white-space: nowrap;
+}
+td:first-child, td:nth-child(2) { text-align: left; }
+tbody tr:hover { background: #f8fafc; }
+
+td.gain { color: var(--gain); font-weight: 600; }
+td.loss { color: var(--loss); font-weight: 600; }
+
+/* ── Allocation chart ───────────────────────────────────────────────────────── */
+.chart-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+    margin-bottom: 2rem;
+}
+.chart-container {
+    max-width: 520px;
+    margin: 0 auto;
+    position: relative;
+    min-height: 200px;
+}
+.chart-status {
+    color: var(--text-muted);
+    font-size: .9rem;
+    text-align: center;
+    padding: 2rem 0;
+}
+
+/* ── Empty state ────────────────────────────────────────────────────────────── */
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--text-muted);
+}
+.empty-state h2 { font-size: 1.2rem; color: var(--text); margin-bottom: .5rem; }
+.empty-state p  { font-size: .9rem; }
+
+/* ── Footer ─────────────────────────────────────────────────────────────────── */
+footer {
+    text-align: center;
+    padding: 1.5rem;
+    font-size: .8rem;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+}
+
+/* ── Gain / loss utility classes (shared) ───────────────────────────────────── */
+.gain { color: var(--gain); }
+.loss { color: var(--loss); }
+
