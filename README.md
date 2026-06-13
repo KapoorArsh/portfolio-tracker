@@ -26,7 +26,7 @@ The app ships with a dev-profile seed that pre-populates five stocks, one portfo
 | Language | Java 25 |
 | Framework | Spring Boot 4.1 |
 | Web MVC | Spring Web MVC + Thymeleaf |
-| Persistence | Spring Data JPA (Hibernate 6) |
+| Persistence | Spring Data JPA (Hibernate 7) |
 | Validation | Jakarta Bean Validation 3 |
 | Dev database | H2 (in-memory) |
 | Prod database | PostgreSQL |
