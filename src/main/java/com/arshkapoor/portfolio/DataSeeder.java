@@ -12,13 +12,21 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 
 /**
- * Populates the H2 in-memory database with representative data on every
+ * Populates the H2 in-memory database with representative sample data on every
  * dev-profile startup so you can immediately verify persistence in the H2
  * console without writing a test.
  *
  * @Profile("dev") — this bean is only created when the "dev" Spring profile
- * is active.  It will NOT run when the "prod" profile is active, so there is
- * no risk of seeding a PostgreSQL production database.
+ * is active.  It will NOT run when the "prod" profile is active.
+ *
+ * NOTE: The stock catalogue (AAPL, MSFT, JPM, etc.) is seeded separately by
+ * StockCatalogueSeeder in ALL profiles (dev + prod).  This seeder focuses only
+ * on creating sample Portfolio, Holdings, Transactions, and Watchlist data.
+ *
+ * Idempotency: checking portfolioRepo.count() prevents re-seeding the sample
+ * data on app restart, but note that the stock catalogue is idempotent at the
+ * individual stock level (per-ticker check), so it can safely be seeded first
+ * then this sample data added on top.
  *
  * CommandLineRunner — Spring Boot calls run() once the application context is
  * fully initialised.  All beans (including repositories) are guaranteed to be
@@ -53,38 +61,38 @@ public class DataSeeder implements CommandLineRunner {
      * If any save() call fails, the whole batch is rolled back — the database
      * is never left in a half-seeded state.
      *
-     * The idempotency guard (stockRepo.count() > 0) is a safety net for
+     * The idempotency guard (portfolioRepo.count() > 0) is a safety net for
      * scenarios where ddl-auto = update instead of create-drop: it prevents
-     * duplicate data on application restart.
+     * duplicate sample data on application restart.
      */
     @Override
     @Transactional
     public void run(String... args) {
-        if (stockRepo.count() > 0) {
-            log.info("[DataSeeder] Database already seeded — skipping.");
+        if (portfolioRepo.count() > 0) {
+            log.info("[DataSeeder] Sample data already seeded — skipping.");
             return;
         }
 
         log.info("[DataSeeder] Seeding database with sample data …");
 
-        // ── 1. Stocks ─────────────────────────────────────────────────────────
-        // stockRepo.save() issues an INSERT and returns the managed entity with
-        // its auto-generated id populated — we keep the reference so we can
-        // attach it to holdings and transactions below.
-        Stock aapl = stockRepo.save(new Stock("AAPL", "Apple Inc.",
-                new BigDecimal("189.30"), "Technology"));
-        Stock msft = stockRepo.save(new Stock("MSFT", "Microsoft Corp.",
-                new BigDecimal("415.50"), "Technology"));
-        Stock jpm  = stockRepo.save(new Stock("JPM",  "JPMorgan Chase & Co.",
-                new BigDecimal("198.75"), "Financials"));
-        Stock nvda = stockRepo.save(new Stock("NVDA", "NVIDIA Corporation",
-                new BigDecimal("875.40"), "Technology"));
-        Stock ko   = stockRepo.save(new Stock("KO",   "The Coca-Cola Company",
-                new BigDecimal("62.15"),  "Consumer Staples"));
+        // ── Load stocks from catalogue (seeded by StockCatalogueSeeder) ────────
+        // These will always exist because StockCatalogueSeeder runs first in all profiles.
+        Stock aapl = stockRepo.findByTickerIgnoreCase("AAPL").orElseThrow(
+            () -> new RuntimeException("[DataSeeder] AAPL not found in catalogue — StockCatalogueSeeder may not have run")
+        );
+        Stock msft = stockRepo.findByTickerIgnoreCase("MSFT").orElseThrow(
+            () -> new RuntimeException("[DataSeeder] MSFT not found in catalogue")
+        );
+        Stock jpm = stockRepo.findByTickerIgnoreCase("JPM").orElseThrow(
+            () -> new RuntimeException("[DataSeeder] JPM not found in catalogue")
+        );
+        Stock nvda = stockRepo.findByTickerIgnoreCase("GOOGL").orElseThrow(
+            () -> new RuntimeException("[DataSeeder] GOOGL not found in catalogue (using as proxy for NVDA)")
+        );
 
-        log.info("[DataSeeder] ✓ Stocks saved: {}", stockRepo.count());
+        log.info("[DataSeeder] ✓ Loaded {} stocks from catalogue", 4);
 
-        // ── 2. Portfolio → Holdings → Transactions ────────────────────────────
+        // ── 1. Portfolio → Holdings → Transactions ────────────────────────────
         Portfolio portfolio = new Portfolio("My Tech Portfolio");
 
         // Three holdings — one per stock position currently held.
@@ -114,20 +122,20 @@ public class DataSeeder implements CommandLineRunner {
         log.info("[DataSeeder] ✓ Portfolio '{}' saved → 3 holdings, 4 transactions",
                 portfolio.getName());
 
-        // ── 3. Watchlist (many-to-many with Stock) ────────────────────────────
+        // ── 2. Watchlist (many-to-many with Stock) ────────────────────────────
         // Watchlist.addStock() calls stocks.add(stock) on the owning Set.
         // Because Watchlist owns the @JoinTable, saving the Watchlist causes
         // Hibernate to INSERT rows into watchlist_stocks.
         // No CascadeType on stocks — the Stock rows already exist and must NOT
         // be deleted if the watchlist is removed.
         Watchlist aiWatch = new Watchlist("AI & Semiconductors");
-        aiWatch.addStock(nvda);  // ← row 1 in watchlist_stocks
+        aiWatch.addStock(nvda);  // ← row 1 in watchlist_stocks (GOOGL as placeholder)
         aiWatch.addStock(msft);  // ← row 2
         watchlistRepo.save(aiWatch);
 
         log.info("[DataSeeder] ✓ Watchlist '{}' saved with {} stocks",
                 aiWatch.getName(), 2);
-        log.info("[DataSeeder] ✓ Database seeding complete.");
+        log.info("[DataSeeder] ✓ Sample data seeding complete.");
     }
 }
 
